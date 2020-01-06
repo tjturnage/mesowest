@@ -29,18 +29,18 @@ try:
     os.listdir('/var/www')
     windows = False
     sys.path.append('/data/scripts/resources')
-    image_dir = os.path.join('/var/www/html/radar','images')
+    image_base_dir = os.path.join('/var/www/html/radar','images')
 except:
     windows = True
     sys.path.append('C:/data/scripts/resources')
     base_dir = 'C:/data'
-    image_dir = os.path.join('C:/data','images')
+    image_base_dir = os.path.join('C:/data','images')
 
 
 import numpy as np
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-from datetime import timezone 
+from datetime import timezone,timedelta
 from metpy.calc import wind_components
 
 #from metpy.cbook import get_test_data
@@ -56,6 +56,8 @@ from mesowest_functions import mesowest_get_timeseries,mesowest_get_current_obse
 
 from case_data import this_case
 event_date = this_case['date']
+image_dir = os.path.join(image_base_dir,event_date,'surface')
+os.makedirs(image_dir, exist_ok = True)
 rda = this_case['rda']
 extent = this_case['sat_extent']
 extent = [-88.4,-84.0,42.5,45.3]
@@ -96,7 +98,7 @@ stns = ','.join(stations_list)
 # ---------------------------------------------------------
 #                Time series data section
 # ---------------------------------------------------------
-request_new_timeseries_data = False
+request_new_timeseries_data = True
 
 import pandas as pd
 
@@ -113,8 +115,10 @@ idx = pd.date_range(p_ts, periods=p_steps, freq=p_int)
 # create time strings of start and end times to pass as
 # agruments for requesting time series data from mesowest
 start_time_pd = idx[0]
+mesowest_start_time_pd = idx[0] - pd.Timedelta('1 hours')
 end_time_pd = idx[-1]
 start_time = start_time_pd.strftime('%Y%m%d%H%M')
+mesowest_start_time = mesowest_start_time_pd.strftime('%Y%m%d%H%M')
 end_time = end_time_pd.strftime('%Y%m%d%H%M')
 
 py_dt = start_time_pd.to_pydatetime()
@@ -123,7 +127,7 @@ orig_time = py_dt.replace(tzinfo=timezone.utc).timestamp()
 ts_file = 'C:/data/timeseries.txt'
 
 if request_new_timeseries_data:
-    mesowest_get_timeseries(start_time,end_time,stations_list,ts_file)
+    mesowest_get_timeseries(mesowest_start_time,end_time,stations_list,ts_file)
 
 # create pandas dataframe for time series data
 sfc_D = None
@@ -168,7 +172,7 @@ for i in range(0,len(idx)):
     #fig = plt.figure(figsize=(20, 10))
     rows = 1
     cols = 1
-    figure_size =(10,10)
+    figure_size =(8,6)
     proj = ccrs.PlateCarree()
     fig, ax = plt.subplots(rows,cols,figsize=figure_size,subplot_kw={'projection': ccrs.PlateCarree()})
 
@@ -217,13 +221,14 @@ for i in range(0,len(idx)):
 
     stationplot.plot_barb(u, v)
 
-    fig_fname_tstr = 'sfc_obs_' + idx[i].strftime('%Y%m%d_%H%M')
-    image_dst_path = os.path.join(image_dir,fig_fname_tstr + '.png')
+    fig_fname = 'sfc_obs_' + idx[i].strftime('%Y%m%d_%H%M') + '.png'
+    print(fig_fname)
+    image_dst_path = os.path.join(image_dir,fig_fname)
     #plt.tight_layout()
 
 
     plot_title = 'Surface Observations - ' + idx[i].strftime('%d %b %Y %H%M UTC')
     ax.set_title(plot_title)
-    #plt.savefig(image_dst_path,format='png')
+    plt.savefig(image_dst_path,format='png')
     plt.show()
     plt.close()
