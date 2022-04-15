@@ -13,12 +13,25 @@ Selecting stations: https://developers.synopticdata.com/mesonet/v2/station-selec
 
 import os
 import sys
+
+try:
+    os.listdir('/usr')
+    base_dir = '/home/tjt/public_html'
+    sys.path.append('/data/scripts/resources')
+    image_dir = os.path.join(base_dir,'placefiles')
+except:
+    windows = True
+    sys.path.append('C:/data/scripts/resources')
+    base_dir = 'C:/data'
+    image_dir = os.path.join('C:/data','images')
+
+
 import math
-from pip import main
 import requests
 from datetime import datetime, timedelta
-from reference_data import set_paths
-data_dir,image_dir,archive_dir,gis_dir,placefile_dir = set_paths()
+html_path = '/home/tjt/public_html'
+public_path = os.path.join(html_path,'public')
+
 from my_functions import timeShift
 dstFile = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
 dstFile = 'latest_surface_observations.txt'
@@ -37,7 +50,7 @@ class Mesowest():
         self.radius_str=radius_str # "KLDM,100"
         self.event_time = event_time
         self.dt = 5 # number of minutes to increment
-        self.steps = 12 # number of increments
+        self.steps = 16 # number of increments
         self.network = "1,2,96"
         self.varStr = 'air_temp,dew_point_temperature,wind_speed,wind_direction,wind_gust,visibility'
         self.api_args = {"token":API_TOKEN,
@@ -67,7 +80,7 @@ class Mesowest():
             self.place_ts = self.event_time
         
         self.base_ts = datetime.strftime(self.baseTime,'%Y%m%d%H%M')
-        #print(self.base_ts)
+        print(self.base_ts)
 
         self.times = timeShift(self.base_ts,self.steps,self.dt,'backward','mesowest')
 
@@ -89,7 +102,7 @@ class Mesowest():
                 'vis':{'threshold':100,'color':'180 180 255','position':'17,-13, 1,'},
                 'rt':{'threshold':125,'color':'255 255 0','position':'17,13, 1,'}}
 
-        self.placeTitle = f'Surface obs_{self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self._ts[-4:]}'  
+        self.placeTitle = f'Surface obs_{self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'  
         placeFileName = 'latest_surface_observations.txt'
         self.build_placefile();
 
