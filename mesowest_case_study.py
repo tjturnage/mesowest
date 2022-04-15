@@ -25,16 +25,17 @@ def station_plot(df):
 import os
 import sys
 
+
 try:
-    os.listdir('/var/www')
+    os.listdir('/usr')
     windows = False
     sys.path.append('/data/scripts/resources')
-    image_base_dir = os.path.join('/var/www/html/radar','images')
 except:
-    windows = True
     sys.path.append('C:/data/scripts/resources')
-    base_dir = 'C:/data'
-    image_base_dir = os.path.join('C:/data','images')
+
+from reference_data import set_paths
+
+data_dir,image_dir,archive_dir,gis_dir,py_call,placefile_dir = set_paths()
 
 
 import numpy as np
@@ -56,15 +57,18 @@ from mesowest_functions import mesowest_get_timeseries,mesowest_get_current_obse
 
 from case_data import this_case
 event_date = this_case['date']
-image_dir = os.path.join(image_base_dir,event_date,'surface')
+case_dir = os.path.join(data_dir,event_date)
+image_dir = os.path.join(case_dir,'surface')
 os.makedirs(image_dir, exist_ok = True)
 rda = this_case['rda']
-extent = this_case['sat_extent']
-extent = [-88.4,-84.0,42.5,45.3]
+try:
+    extent = this_case['sat_extent']
+except:
+    extent = [-88.4,-84.0,42.5,45.3]
 orig_extent = extent
 
 shapelist = this_case['shapelist']
-case_dir = os.path.join(base_dir,event_date)
+
 
 shortDict = {'air_temp_value_1':'t',
              'dew_point_temperature_value_1d':'dp',
@@ -82,7 +86,7 @@ for keys in shortDict:
 # ---------------------------------------------------------
 #                Station list section
 # ---------------------------------------------------------
-create_new_stations_list = False
+create_new_stations_list = True
 
 stations_list = ['KACB','KAMN','KBIV','KCAD','KETB','KGOV','KGRB','KGRR','KHTL',
              'KLDM','KMBL','KMKG','KMOP','KMTW','KRQB','KSBM','KSUE','KTVC',
@@ -90,7 +94,7 @@ stations_list = ['KACB','KAMN','KBIV','KCAD','KETB','KGOV','KGRB','KGRR','KHTL',
              '45007','MKGM4','MLWW3','SGNW3','KFFX','KY70','NMIM4','KOCQ','RSCM4','K3D2']
 
 if create_new_stations_list: 
-    jas2,stations_list = mesowest_get_current_observations()
+    jas2,stations_list = mesowest_get_current_observations("KDSM,100")
 
 stns = ','.join(stations_list)
 
@@ -141,6 +145,7 @@ sfc_D = pd.read_csv(ts_file, header=0, index_col=['time'],parse_dates=True,
 # ---------------------------------------------------------
 
 # Create list of radar files, their filepaths, and their valid times
+
 from my_functions import make_radar_array, add_radar_paths, figure_timestamp
 
 
