@@ -34,7 +34,7 @@ public_path = os.path.join(html_path,'public')
 
 from my_functions import timeShift
 dstFile = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
-dstFile = 'latest_surface_observations.txt'
+#dstFile = 'latest_surface_observations.txt'
 
 from api_tokens import mesowest_API_TOKEN as API_TOKEN
 #API_TOKEN = 'token'  # placeholder for testing
@@ -44,7 +44,7 @@ class Mesowest():
 
     """
 
-    def __init__(self,states="mi,wi,il,in,oh",radius_str=None,event_time=None):
+    def __init__(self,states="mi,wi,il,in,oh",radius_str="KMKG,250",event_time=None):
 
         self.states = states
         self.radius_str=radius_str # "KLDM,100"
