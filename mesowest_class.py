@@ -44,14 +44,14 @@ class Mesowest():
 
     """
 
-    def __init__(self,bbox="-91,39.5,-82,47.5",event_time=None):
+    def __init__(self,bbox="-90.5,40,-82,47",event_time=None):
 
         #self.states = states
         #self.radius_str=radius_str # "KLDM,100"
         self.bbox = bbox
         self.event_time = event_time
         self.dt = 5 # number of minutes to increment
-        self.steps = 18 # number of increments
+        self.steps = 22 # number of increments
         self.network = "1,2,96"
         self.varStr = 'air_temp,dew_point_temperature,wind_speed,wind_direction,wind_gust,visibility'
         self.api_args = {"token":API_TOKEN,
@@ -66,8 +66,10 @@ class Mesowest():
 
         if self.event_time is None:
             now = datetime.utcnow()
-            self.baseTime = now - timedelta(minutes=now.minute%5) + timedelta(minutes=10)
-            self.placeTime = now - timedelta(minutes=now.minute%5)
+            round_down = now.minute%5
+            round_up = 10 - round_down
+            self.baseTime = now + timedelta(minutes=round_up)
+            self.placeTime = now - timedelta(minutes=round_down)
             self.place_ts = datetime.strftime(self.placeTime,'%Y%m%d%H%M')
         else:
             self.baseTime = datetime.strptime(self.event_time,'%Y%m%d%H%M')
@@ -97,7 +99,6 @@ class Mesowest():
                 'rt':{'threshold':125,'color':'255 255 0','position':'17,13, 1,'}}
 
         self.placeTitle = f'Surface obs_{self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'  
-        placeFileName = 'latest_surface_observations.txt'
         self.build_placefile();
 
     def str_to_fl(self,string):
@@ -123,6 +124,7 @@ class Mesowest():
             now = self.times[t][1]
             future = self.times[t][2]
             """
+            Example of TimeRange line:
             TimeRange: 2019-03-06T23:14:39Z 2019-03-06T23:16:29Z
             """
             #timeText = 'TimeRange: ' + now + ' ' + future + '\n\n'
