@@ -34,7 +34,7 @@ public_path = os.path.join(html_path,'public')
 
 from my_functions import timeShift
 dstFile = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
-#dstFile = 'latest_surface_observations.txt'
+dstFile = 'latest_surface_observations.txt'
 
 from api_tokens import mesowest_API_TOKEN as API_TOKEN
 #API_TOKEN = 'token'  # placeholder for testing
@@ -44,31 +44,31 @@ class Mesowest():
 
     """
 
-    def __init__(self,states="mi,wi,il,in,oh",radius_str="KMKG,250",event_time=None):
+    def __init__(self,bbox="-91,40,-82,47.5",event_time=None):
 
-        self.states = states
-        self.radius_str=radius_str # "KLDM,100"
+        #self.states = states
+        #self.radius_str=radius_str # "KLDM,100"
+        self.bbox = bbox
         self.event_time = event_time
         self.dt = 5 # number of minutes to increment
-        self.steps = 16 # number of increments
+        self.steps = 4 # number of increments
         self.network = "1,2,96"
         self.varStr = 'air_temp,dew_point_temperature,wind_speed,wind_direction,wind_gust,visibility'
         self.api_args = {"token":API_TOKEN,
-                        "radius":self.radius_str, # 
-                        "state":self.states,
+                        "bbox":self.bbox, 
                         "status":"active",
                         "network":self.network,
                         "vars":self.varStr,
                         "units":"temp|F,speed|kts,precip|in",
                         "within":"30"}
 
-        if self.radius_str is not None:
-            del self.api_args['state']
-        elif self.states is not None:
-            del self.api_args['radius']
-        else:
-            print("Need either a radius or state argument!!")        
-        #print(self.api_args)
+        #if self.radius_str is not None:
+        #    del self.api_args['state']
+        #elif self.states is not None:
+        #    del self.api_args['radius']
+        #else:
+        #    print("Need either a radius or state argument!!")        
+        print(self.api_args)
 
         if self.event_time is None:
             now = datetime.utcnow()
