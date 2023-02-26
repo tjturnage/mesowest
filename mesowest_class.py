@@ -5,7 +5,7 @@
 Retrieves observations via the Mesowest API.
 Learn more about setting up your own account at: https://synopticdata.com/
 
-Getg latest obs: https://developers.synopticdata.com/mesonet/v2/stations/latest/
+Get latest obs: https://developers.synopticdata.com/mesonet/v2/stations/latest/
 Obs network/station providers: https://developers.synopticdata.com/about/station-providers
 Selecting stations: https://developers.synopticdata.com/mesonet/v2/station-selectors/
 
@@ -13,28 +13,30 @@ Selecting stations: https://developers.synopticdata.com/mesonet/v2/station-selec
 
 import os
 import sys
-
-try:
-    os.listdir('/usr')
-    base_dir = '/home/tjt/public_html'
-    sys.path.append('/data/scripts/resources')
-    image_dir = os.path.join(base_dir,'placefiles')
-except:
-    windows = True
-    sys.path.append('C:/data/scripts/resources')
-    base_dir = 'C:/data'
-    image_dir = os.path.join('C:/data','images')
-
-
 import math
 import requests
 from datetime import datetime, timedelta
-html_path = '/home/tjt/public_html'
-public_path = os.path.join(html_path,'public')
+
+try:
+    os.listdir('/usr')
+    BASE_DIR = '/home/tjt/public_html'
+    sys.path.append('/data/scripts/resources')
+    IMAGE_DIR = os.path.join(BASE_DIR,'placefiles')
+except ValueError:
+    WINDOWS = True
+    sys.path.append('C:/data/scripts/resources')
+    BASE_DIR = 'C:/data'
+    IMAGE_DIR = os.path.join('C:/data','images')
 
 from my_functions import timeShift
-dstFile = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
-#dstFile = 'latest_surface_observations.txt'
+
+
+HTML_PATH = '/home/tjt/public_html'
+PUBLIC_PATH = os.path.join(HTML_PATH,'public')
+
+
+DEST_FILE = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
+DEST_FILE = 'latest_surface_observations.txt'
 
 from api_tokens import mesowest_API_TOKEN as API_TOKEN
 #API_TOKEN = 'token'  # placeholder for testing
@@ -50,15 +52,15 @@ class Mesowest():
         #self.radius_str=radius_str # "KLDM,100"
         self.bbox = bbox
         self.event_time = event_time
-        self.dt = 5 # number of minutes to increment
+        self.delta_t = 5 # number of minutes to increment
         self.steps = 22 # number of increments
         self.network = "1,2,96"
-        self.varStr = 'air_temp,dew_point_temperature,wind_speed,wind_direction,wind_gust,visibility'
+        self.variable_string = 'air_temp,dew_point_temperature,wind_speed,wind_direction,wind_gust,visibility'
         self.api_args = {"token":API_TOKEN,
                         "bbox":self.bbox, 
                         "status":"active",
                         "network":self.network,
-                        "vars":self.varStr,
+                        "vars":self.variable_string,
                         "units":"temp|F,speed|kts,precip|in",
                         "within":"30"}
     
@@ -68,29 +70,29 @@ class Mesowest():
             now = datetime.utcnow()
             round_down = now.minute%5
             round_up = 10 - round_down
-            self.baseTime = now + timedelta(minutes=round_up)
-            self.placeTime = now - timedelta(minutes=round_down)
-            self.place_ts = datetime.strftime(self.placeTime,'%Y%m%d%H%M')
+            self.base_time = now + timedelta(minutes=round_up)
+            self.place_time = now - timedelta(minutes=round_down)
+            self.place_ts = datetime.strftime(self.place_time,'%Y%m%d%H%M')
         else:
-            self.baseTime = datetime.strptime(self.event_time,'%Y%m%d%H%M')
+            self.base_time = datetime.strptime(self.event_time,'%Y%m%d%H%M')
             self.place_ts = self.event_time
         
-        self.base_ts = datetime.strftime(self.baseTime,'%Y%m%d%H%M')
+        self.base_ts = datetime.strftime(self.base_time,'%Y%m%d%H%M')
         print(self.base_ts)
 
-        self.times = timeShift(self.base_ts,self.steps,self.dt,'backward','mesowest')
+        self.times = timeShift(self.base_ts,self.steps,self.delta_t,'backward','mesowest')
 
-        self.shortDict = {'air_temp_value_1':'t',
+        self.short_dict = {'air_temp_value_1':'t',
                     'dew_point_temperature_value_1d':'dp',
                     'wind_speed_value_1':'wspd',
                     'wind_direction_value_1':'wdir',
                     'wind_gust_value_1':'wgst',
                     'visibility_value_1':'vis'}
         
-        self.varList = list(self.shortDict.keys())
+        self.variable_list = list(self.short_dict.keys())
         self.wind_zoom = 500
         self.t_zoom = 300
-        self.stnDict2 = {'t':{'threshold':self.t_zoom,'color':'200 100 100','position':'-17,13, 1,'},
+        self.stn_dict2 = {'t':{'threshold':self.t_zoom,'color':'200 100 100','position':'-17,13, 1,'},
                 'dp':{'threshold':self.t_zoom,'color':'0 255 0','position':'-17,-13, 1,'},
                 'wspd':{'threshold':self.wind_zoom,'color':'255 255 255','position':'NA'},
                 'wdir':{'threshold':self.wind_zoom,'color':'255 255 255','position':'NA'},
@@ -98,7 +100,7 @@ class Mesowest():
                 'vis':{'threshold':100,'color':'180 180 255','position':'17,-13, 1,'},
                 'rt':{'threshold':125,'color':'255 255 0','position':'17,13, 1,'}}
 
-        self.placeTitle = f'Surface obs_{self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'  
+        self.place_title = f'Surface obs_{self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'  
         self.build_placefile();
 
     def str_to_fl(self,string):
@@ -107,7 +109,7 @@ class Mesowest():
         """
         try:
             return float(string)
-        except:
+        except ValueError:
             return 'NA'
 
     def build_placefile(self):
