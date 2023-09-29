@@ -17,18 +17,14 @@ from datetime import datetime, timedelta
 import requests
 
 try:
-    os.listdir('/usr')
-    BASE_DIR = '/home/tjt/public_html'
-except Exception:
-    BASE_DIR = 'C:/data'
+    os.listdir('/home/tjturnage')
+    DEST_HOME = '/home/tjturnage/assets'
+except FileNotFoundError:
+    DEST_HOME = 'C:/data'
 
 
-
-#html_path = '/home/tjt/public_html'
-#public_path = os.path.join(html_path,'public')
-
-DEST_HOME = '/home/tjt/public_html/public/placefiles'
-DEST_HOME = 'C:/data/scripts/mesowest'
+#DEST_HOME = '/home/tjt/public_html/public/placefiles'
+#DEST_HOME = 'C:/data/scripts/mesowest'
 
 #dstFile = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
 #dstFile = 'latest_surface_observations.txt'
@@ -104,8 +100,8 @@ class Mesowest():
 
         self.bbox = bbox
         self.event_time = event_time
-        self.d_t = 5 # number of minutes to increment
-        self.steps = 22 # number of increments
+        self.d_t = 10 # number of minutes to increment
+        self.steps = 1# number of increments
         self.network = "1,2,96,162"
         self.var_str = 'air_temp,dew_point_temperature,wind_speed,wind_direction,wind_gust,visibility,road_temp'
         self.unit_str = 'temp|F,speed|kts,precip|in'
@@ -115,7 +111,7 @@ class Mesowest():
                         "network":self.network,
                         "vars":self.var_str,
                         "units":self.unit_str,
-                        "within":"25"}
+                        "within":"30"}
 
         if self.event_time is None:
             now = datetime.utcnow()
@@ -156,19 +152,23 @@ class Mesowest():
                 'vis':{'threshold':100,'color':'180 180 255','position':'17,-13, 1,'},
                 'rt':{'threshold':500,'color':'255 255 0','position':'17,13, 1,'}}
 
-        self.rwis_dict = {'t':{'threshold':rwis_t_zoom,'color':'200 100 100','position':'-17,13, 2,'},
-                'dp':{'threshold':rwis_t_zoom,'color':'25 225 25','position':'-17,-13, 2,'},
-                'wspd':{'threshold':rwis_wind_zoom,'color':gray,'position':'NA'},
-                'wdir':{'threshold':rwis_wind_zoom,'color':gray,'position':'NA'},
-                'wgst':{'threshold':rwis_wind_zoom,'color':gray,'position':'NA'},
-                'vis':{'threshold':100,'color':'180 180 255','position':'17,-13, 2,'},
-                'rt':{'threshold':500,'color':'255 255 0','position':'17,13, 2,'}}
+        self.rwis_dict = \
+            {'t':{'threshold':rwis_t_zoom,'color':'200 100 100','position':'-17,13, 2,'},
+            'dp':{'threshold':rwis_t_zoom,'color':'25 225 25','position':'-17,-13, 2,'},
+            'wspd':{'threshold':rwis_wind_zoom,'color':gray,'position':'NA'},
+            'wdir':{'threshold':rwis_wind_zoom,'color':gray,'position':'NA'},
+            'wgst':{'threshold':rwis_wind_zoom,'color':gray,'position':'NA'},
+            'vis':{'threshold':100,'color':'180 180 255','position':'17,-13, 2,'},
+            'rt':{'threshold':500,'color':'255 255 0','position':'17,13, 2,'}}
 
-        self.place_title = f'Air Temperature {self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'
-        self.wind_place_title = f'Wind and Gust {self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'
-        self.road_place_title = f'Road Temperature {self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'
-        self.dewpoint_place_title = f'Dewpoint Temperature {self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'
-        self.build_placefile();
+        place_text = \
+        f'{self.place_ts[0:4]}-{self.place_ts[4:6]}-{self.place_ts[6:8]}-{self.place_ts[-4:]}'
+        self.all_title = f'All Elements {place_text}'
+        self.place_title = f'Air Temperature {place_text}'
+        self.wind_place_title = f'Wind and Gust {place_text}'
+        self.road_place_title = f'Road Temperature {place_text}'
+        self.dewpoint_place_title = f'Dewpoint Temperature {place_text}'
+        self.build_placefile()
 
     def str_to_fl(self,string):
         """
@@ -176,40 +176,28 @@ class Mesowest():
         """
         try:
             return float(string)
-        except Exception:
+        except TypeError:
             return 'NA'
 
     def build_placefile(self):
         """
         go through the steps
         """
-        self.placefile = 'Title: Mesowest ' + self.place_title + '\nRefresh: 1\nColor: 255 200 255\n \
-        IconFile: 1, 18, 32, 2, 31, "https://mesonet.agron.iastate.edu/request/grx/windbarbs.png" \n \
-        IconFile: 2, 15, 15, 8, 8, "https://mesonet.agron.iastate.edu/request/grx/cloudcover.png"\n \
-        IconFile: 3, 25, 25, 12, 12, "https://mesonet.agron.iastate.edu/request/grx/rwis_cr.png"\n \
-        Font: 1, 14, 1, "Arial"\n \
-        Font: 2, 11, 1, "Arial"\n\n'
-
-        self.wind_placefile = 'Title: Mesowest ' + self.wind_place_title + '\nRefresh: 1\nColor: 255 200 255\n \
-        IconFile: 1, 18, 32, 2, 31, "https://mesonet.agron.iastate.edu/request/grx/windbarbs.png" \n \
-        IconFile: 2, 15, 15, 8, 8, "https://mesonet.agron.iastate.edu/request/grx/cloudcover.png"\n \
-        IconFile: 3, 25, 25, 12, 12, "https://mesonet.agron.iastate.edu/request/grx/rwis_cr.png"\n \
-        Font: 1, 14, 1, "Arial"\n \
-        Font: 2, 11, 1, "Arial"\n\n'
-
-        self.road_placefile = 'Title: Mesowest ' + self.road_place_title + '\nRefresh: 1\nColor: 255 200 255\n \
-        IconFile: 1, 18, 32, 2, 31, "https://mesonet.agron.iastate.edu/request/grx/windbarbs.png" \n \
-        IconFile: 2, 15, 15, 8, 8, "https://mesonet.agron.iastate.edu/request/grx/cloudcover.png"\n \
-        IconFile: 3, 25, 25, 12, 12, "https://mesonet.agron.iastate.edu/request/grx/rwis_cr.png"\n \
-        Font: 1, 14, 1, "Arial"\n \
-        Font: 2, 11, 1, "Arial"\n\n'
         
-        self.dewpoint_placefile = 'Title: Mesowest ' + self.dewpoint_place_title + '\nRefresh: 1\nColor: 255 200 255\n \
-        IconFile: 1, 18, 32, 2, 31, "https://mesonet.agron.iastate.edu/request/grx/windbarbs.png" \n \
-        IconFile: 2, 15, 15, 8, 8, "https://mesonet.agron.iastate.edu/request/grx/cloudcover.png"\n \
-        IconFile: 3, 25, 25, 12, 12, "https://mesonet.agron.iastate.edu/request/grx/rwis_cr.png"\n \
-        Font: 1, 14, 1, "Arial"\n \
-        Font: 2, 11, 1, "Arial"\n\n'
+        icon_font_text = '\n\nRefresh: 1\
+        \nColor: 255 200 255\
+        \nIconFile: 1, 18, 32, 2, 31, "https://mesonet.agron.iastate.edu/request/grx/windbarbs.png"\
+        \nIconFile: 2, 15, 15, 8, 8, "https://mesonet.agron.iastate.edu/request/grx/cloudcover.png"\
+        \nIconFile: 3, 25, 25, 12, 12, "https://mesonet.agron.iastate.edu/request/grx/rwis_cr.png"\
+        \nFont: 1, 14, 1, "Arial"\
+        \nFont: 2, 11, 1, "Arial"\n\n'
+        
+
+        self.placefile = 'Title: Mesowest ' + self.place_title + icon_font_text
+        self.wind_placefile = 'Title: Mesowest ' + self.wind_place_title + icon_font_text
+        self.road_placefile = 'Title: Mesowest ' + self.road_place_title + icon_font_text
+        self.dewpoint_placefile = 'Title: Mesowest ' + self.dewpoint_place_title + icon_font_text
+        self.all_placefile = 'Title: Mesowest ' + self.all_title + icon_font_text
 
         for _t,this_time in enumerate(self.times):
             time_str = this_time[0]
@@ -225,16 +213,21 @@ class Mesowest():
             self.wind_placefile += time_text
             self.road_placefile += time_text
             self.dewpoint_placefile += time_text
+            self.all_placefile += time_text
             for j,station in enumerate(jas['STATION']):
                 temp_txt = ''
-                lon = (station['LONGITUDE'])
-                lat = (station['LATITUDE'])
-                status = (station['STATUS'])
-                network = (int(station['MNET_ID']))
+                lon = station['LONGITUDE']
+                lat = station['LATITUDE']
+                status = station['STATUS']
+                network = int(station['MNET_ID'])
                 if int(network) == 162:
                     wind_zoom = 300
                 else:
                     wind_zoom = 500
+                t_txt = ''
+                dp_txt = ''
+                vis_txt = ''
+                rt_txt = ''
                 t_str = 'NA'
                 dp_str = 'NA'
                 wdir_str = 'NA'
@@ -242,7 +235,7 @@ class Mesowest():
                 wgst_str = 'NA'
                 vis_str = 'NA'
                 rt_str = 'NA'
-                if (status == 'ACTIVE'):
+                if status == 'ACTIVE':
                     for _n,element in enumerate(self.var_list):
                         short = str(self.short_dict[element])
                         try:
@@ -269,29 +262,36 @@ class Mesowest():
                             elif short == 'wgst':
                                 wgst_str, text_info = self.convert_met_values(scratch,short,network)
                                 #wgst_txt = temp_txt + text_info
-                        except Exception:
-                            pass
+
+                        except ValueError as value_error:  # Catch only ValueErrors
+                            print(f"Caught a ValueError: {value_error}")
+                        except TypeError as type_error:  # Catch only TypeErrors
+                            print(f"Caught a TypeError: {type_error}")
+                        except Exception as exception:   # Use a general exception handler as a "catch all"
+                            print(f"Caught an unexpected error: {exception}")
+
 
                 obj_head = f'Object: {lat},{lon}\n'
 
                 if wdir_str != 'NA' and wspd_str != 'NA':
-                    #self.placefile += f'{objHead}  Threshold: {wind_zoom}\n  Icon: 0,0,{wdirStr},1,{wspdStr}\n End:\n\n'
+                    self.all_placefile += f'{obj_head}  Threshold: {wind_zoom}\n  Icon: 0,0,{wdir_str},1,{wspd_str}\n End:\n\n'
                     self.wind_placefile += f'{obj_head}  Threshold: {wind_zoom}\n  Icon: 0,0,{wdir_str},1,{wspd_str}\n End:\n\n'
 
                 if t_str != 'NA':
+                    self.all_placefile += f'{obj_head}{t_txt} End:\n\n'
                     self.placefile += f'{obj_head}{t_txt} End:\n\n'
                 if dp_str != 'NA':
-                    #self.placefile += f'{objHead}{dpTxt} End:\n\n'
+                    self.all_placefile += f'{obj_head}{dp_txt} End:\n\n'
                     self.dewpoint_placefile += f'{obj_head}{dp_txt} End:\n\n'
 
                 if wgst_str != 'NA' and wdir_str != 'NA':
                     wgst_text = self.gust_obj(wdir_str, int(wgst_str), 'wgst', network)
-                    #self.placefile += f'{objHead}{wgstText} End:\n\n'
+                    self.all_placefile += f'{obj_head}{wgst_text} End:\n\n'
                     self.wind_placefile += f'{obj_head}{wgst_text} End:\n\n'
                 if vis_str != 'NA':
                     self.placefile += f'{obj_head}{vis_txt} End:\n\n'
                 if rt_str != 'NA':
-                    #self.placefile += f'{objHead}{rtTxt} End:\n\n'
+                    self.all_placefile += f'{obj_head}{rt_txt} End:\n\n'
                     self.road_placefile += f'{obj_head}{rt_txt} End:\n\n'
 
 
@@ -303,9 +303,12 @@ class Mesowest():
 
         with open(os.path.join(DEST_HOME, 'road.txt'), 'w', encoding='utf8') as outfile:
             outfile.write(self.road_placefile)
-     
+
         with open(os.path.join(DEST_HOME, 'dwpt.txt'), 'w', encoding='utf8') as outfile:
             outfile.write(self.dewpoint_placefile)
+
+        with open(os.path.join(DEST_HOME, 'latest_surface_observations.txt'), 'w', encoding='utf8') as outfile:
+            outfile.write(self.all_placefile)
 
     def mesowest_get_nearest_time_data(self,time_str):
         """
@@ -322,7 +325,8 @@ class Mesowest():
         """
         api_request_url = os.path.join(API_ROOT, "stations/nearesttime")
         self.api_args['attime'] = time_str
-        req = requests.get(api_request_url, params=self.api_args)
+        req = requests.get(api_request_url, params=self.api_args, timeout=10)
+
         jas = req.json()
         return jas
 
@@ -401,13 +405,13 @@ class Mesowest():
                 if numfloat <= 2.75:
                     final = '2 3/4'
                 if numfloat <= 2.50:
-                    final = '2 1/2'               
+                    final = '2 1/2'
                 if numfloat <= 2.25:
                     final = '2 1/4'
                 if numfloat <= 2.0:
                     final = '2'
                 if numfloat <= 1.75:
-                    final = '1 3/4'    
+                    final = '1 3/4'
                 if numfloat <= 1.50:
                     final = '1 1/2'                 
                 if numfloat <= 1.25:
@@ -415,7 +419,7 @@ class Mesowest():
                 if numfloat <= 1.00:
                     final = '1'
                 if numfloat <= 0.75:
-                    final = '3/4'                   
+                    final = '3/4'
                 if numfloat <= 0.50:
                     final = '1/2'
                 if numfloat <= 0.25:
@@ -485,7 +489,7 @@ class Mesowest():
             this_dict = self.rwis_dict
         else:
             this_dict = self.stn_dict2
-            
+        
         thresh_line = 'Threshold: ' + str(this_dict[short]['threshold']) + '\n'
         color_line = '  Color: ' + str(this_dict[short]['color']) + '\n'
         position = '  Text: ' + str(this_dict[short]['position']) + new_str + '\n'
