@@ -29,8 +29,7 @@ except FileNotFoundError:
 #dstFile = '/home/tjt/public_html/public/placefiles/latest_surface_observations.txt'
 #dstFile = 'latest_surface_observations.txt'
 
-#from api_tokens import mesowest_API_TOKEN as API_TOKEN
-API_TOKEN = "292d36a692d74badb6ca011f4413ae1b"  # placeholder for testing
+from api_tokens import mesowest_API_TOKEN as API_TOKEN
 API_ROOT = "https://api.synopticdata.com/v2/"
 
 def time_shift(time_str,num,d_t,direction='backward',api='mesowest'):
@@ -221,9 +220,11 @@ class Mesowest():
                 status = station['STATUS']
                 network = int(station['MNET_ID'])
                 if int(network) == 162:
-                    wind_zoom = 300
+                    wind_zoom = 200
+                    other_zoom = 125
                 else:
                     wind_zoom = 500
+                    other_zoom = 300
                 t_txt = ''
                 dp_txt = ''
                 vis_txt = ''
@@ -394,7 +395,7 @@ class Mesowest():
                 text_info = self.build_object(new_str,short,network)
             elif short == 'wgst':
                 new = int(round(numfloat,1))
-                new_str = '" ' + str(new) + ' "'    
+                new_str = '" ' + str(new) + ' "'
                 text_info = self.build_object(new_str,short,network)
                 new_str = str(new)
             elif short == 'vis':
@@ -489,7 +490,7 @@ class Mesowest():
             this_dict = self.rwis_dict
         else:
             this_dict = self.stn_dict2
-        
+
         thresh_line = 'Threshold: ' + str(this_dict[short]['threshold']) + '\n'
         color_line = '  Color: ' + str(this_dict[short]['color']) + '\n'
         position = '  Text: ' + str(this_dict[short]['position']) + new_str + '\n'
